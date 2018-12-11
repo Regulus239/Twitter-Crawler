@@ -21,7 +21,7 @@ consumer_key = "Your consumer_Key"
 consumer_secret = "Your consumer_Secret"
 access_key = "Your access_key"
 access_secret = "Your access_secret"
-
+#insert yours
 
 #M3 
 import mysql.connector
@@ -35,6 +35,11 @@ mycursor = mydb.cursor()
 
 sqlFormula = "INSERT INTO PictureURLS(Topic, URL) VALUES (%s,%s)"
 
+import pymongo
+# mongodb data
+myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+mydb = myclient["twitterdata"]
+mycol = mydb["miniproject3"]
 
 
 
@@ -60,7 +65,6 @@ def get_label(path):
          draw.text((size,size+2*size*i),label.description, fill=(0,255,0),font=ttfont)
          i+=1
     im.save(path)
-
 
 
 
@@ -92,6 +96,7 @@ def get_all_tweets(screen_name):
         print('not enough picture')
         return        
     oldest = new_tweets[-1].id - 1
+    
     while len(picture_urls)<9 :
         for tweet in new_tweets:
             if 'media' not in tweet._json['entities']:
@@ -102,6 +107,12 @@ def get_all_tweets(screen_name):
             print('we have only '+str(len(picture_urls))+' pictures')
             return
         oldest = new_tweets[-1].id - 1
+        
+    
+    for key in picture_urls :   
+        # print({key:databasedict[key]})
+        mycol.insert_one({key:picture_urls[key]})
+    
     for i in range(len(picture_urls)):
         mycursor.execute(screen_name, picture_urls)
         filename="img00"+str(i)+".jpg"
