@@ -25,16 +25,6 @@ access_secret = "Your access_secret"
 
 #M3 
 import mysql.connector
-mydb=mysql.connector.connect(
-        host='localhost',
-        user='root',
-        passwd='Yourpassword',
-        database='twittercrawler_recorder')
-
-mycursor = mydb.cursor()
-
-sqlFormula = "INSERT INTO PictureURLS(Topic, URL) VALUES (%s,%s)"
-
 import pymongo
 # mongodb data
 myclient = pymongo.MongoClient("mongodb://localhost:27017/")
@@ -107,25 +97,37 @@ def get_all_tweets(screen_name):
             print('we have only '+str(len(picture_urls))+' pictures')
             return
         oldest = new_tweets[-1].id - 1
-        
-    
-    for key in picture_urls :   
-        # print({key:databasedict[key]})
-        mycol.insert_one({key:picture_urls[key]})
     
     for i in range(len(picture_urls)):
-        mycursor.execute(screen_name, picture_urls)
         filename="img00"+str(i)+".jpg"
-        savepics(picture_urls[i],screen_name,filename)  
+        savepics(picture_urls[i],screen_name,filename)
+
+    sqlrecord(screen_name,picture_urls)#upload data mysql
+    mongorecord(picture_urls)
         
+def sqlrecord(screen_name,picture_urls):#upload (topic , picture_urls) to my sql
+    mydb=mysql.connector.connect(
+        host='localhost',
+        user='root',
+        passwd='yourpassword', #input your password
+        database='TwitterCrawlerURLS',#build your database before using this
+        auth_plugin='mysql_native_password')#this line should be added if it doesn't recognize your passwd form
+
+    mycursor = mydb.cursor()
+    sqlFormula = "INSERT INTO Twittercontent(Topic, URL) VALUES (%s,%s)"
+    for url in picture_urls:
+        mycursor.execute(sqlFormula,(screen_name, url))#upload to preset table
+    mydb.commit()
     
-    
+def mongorecord(picture_urls):
+    myclient = pymongo.MongoClient("mongodb://localhost:27017/")
+    mydb = myclient["TwitterCrawlerUrls"]
+    mycol = mydb["Twitter"]
+    dp=dict(picture_urls)
+    for key in picture_urls :   
+        mycol.insert_one({key:dp[key]})    
     
     
 if __name__ == '__main__':
-    topic="@YOURTOPIC"
+    topic="@YOURTOPIC"#type in your topic
     get_all_tweets(topic)
-    #subprocess.call("cd ./"+topic,shell=True)
-    #subprocess.call("ffmpeg -r 60 -f image2 -s 1920x1080 -i img%04d.jpg -vcodec libx264 -crf 25  -pix_fmt yuv420p test.mp4",shell=True)
-    
-    mydb.commit()
